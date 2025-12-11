@@ -18,12 +18,20 @@ import (
 const (
 	grpcPort  = ":50051"
 	httpPort  = ":8087"
-	baseURL   = "http://localhost:8087"
 	dbPath    = "./imagestore.db"
 	imagesDir = "./images"
 )
 
+func getEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
+}
+
 func main() {
+	baseURL := getEnv("BASE_URL", "http://localhost:8087")
+
 	if err := os.MkdirAll(imagesDir, 0o750); err != nil {
 		log.Fatalf("failed to create images directory: %v", err)
 	}
@@ -50,7 +58,6 @@ func main() {
 	httpMux.HandleFunc("/health", handler.HealthCheck)
 
 	go func() {
-		// #nosec G102
 		listener, err := net.Listen("tcp", grpcPort)
 		if err != nil {
 			log.Fatalf("failed to listen on %s: %v", grpcPort, err)
