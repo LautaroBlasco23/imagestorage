@@ -16,8 +16,6 @@ import (
 )
 
 const (
-	grpcPort  = ":50051"
-	httpPort  = ":8087"
 	dbPath    = "./imagestore.db"
 	imagesDir = "./images"
 )
@@ -31,6 +29,10 @@ func getEnv(key, fallback string) string {
 
 func main() {
 	baseURL := getEnv("BASE_URL", "http://localhost:8087")
+
+	bindAddr := getEnv("BIND_ADDR", "127.0.0.1")
+	grpcAddr := bindAddr + ":50051"
+	httpAddr := bindAddr + ":8087"
 
 	if err := os.MkdirAll(imagesDir, 0o750); err != nil {
 		log.Fatalf("failed to create images directory: %v", err)
@@ -58,11 +60,11 @@ func main() {
 	httpMux.HandleFunc("/health", handler.HealthCheck)
 
 	go func() {
-		listener, err := net.Listen("tcp", grpcPort)
+		listener, err := net.Listen("tcp", grpcAddr)
 		if err != nil {
-			log.Fatalf("failed to listen on %s: %v", grpcPort, err)
+			log.Fatalf("failed to listen on %s: %v", grpcAddr, err)
 		}
-		log.Printf("gRPC server listening on %s", grpcPort)
+		log.Printf("gRPC server listening on %s", grpcAddr)
 		if err := grpcServer.Serve(listener); err != nil {
 			log.Fatalf("failed to serve gRPC: %v", err)
 		}
@@ -70,13 +72,13 @@ func main() {
 
 	go func() {
 		httpServer := &http.Server{
-			Addr:         httpPort,
+			Addr:         httpAddr,
 			Handler:      httpMux,
 			ReadTimeout:  15 * time.Second,
 			WriteTimeout: 15 * time.Second,
 			IdleTimeout:  60 * time.Second,
 		}
-		log.Printf("HTTP server listening on %s", httpPort)
+		log.Printf("HTTP server listening on %s", httpAddr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("failed to serve HTTP: %v", err)
 		}
