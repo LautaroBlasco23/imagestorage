@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	dbPath    = "./imagestore.db"
+	dbPath    = "./images/imagestore.db"
 	imagesDir = "./images"
 )
 
